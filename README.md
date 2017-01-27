@@ -7,3 +7,7 @@ This repository holds code for the _bulk fitness assay_ described in this [2016 
 For more details, please see the supplement of the above paper. Details available upon request.
 
 ## Useage
+
+## Dependencies
+
+Requires Python 2.7.x or 3.5.x or newer. Also requires the [SciPy](https://www.scipy.org/) stack.

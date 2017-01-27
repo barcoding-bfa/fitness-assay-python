@@ -27,7 +27,7 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
     Optional parameters:
     :param outputFolder: folder to save fitness data output. Saved in tab separated column formats.
     :param experimentName: name of experiment, used in saving fitness files
-    :param neutralBarcodes: list of putatively neutral barcodes
+    :param neutralBarcodes: list of putatively neutral (ie reference strain) barcodes
     :param multNoiseThresh: read threshold used to compute multiplicative noise coefficient
     :param zCutoff: cutoff used to establish neutrals
     :param multNoiseBase: default value of multiplicative noise, used if only 1 replicate exists
@@ -45,10 +45,12 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
     """
 
     repNames = list(allReads) # names of replicates
+
     # Make sure reads are a numpy array
     for repName in repNames:
         allReads[repName] = np.asarray(allReads[repName],dtype=np.dtype(float))
     cycleTimes = np.asarray(cycleTimes)
+
     # sort barcodes, rearrange data appropriately
     sortedBarcodeIdx = np.argsort(barcodes)
     barcodes = np.sort(barcodes)
@@ -57,10 +59,11 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
     for repName in repNames:
         allReads[repName] = allReads[repName][sortedBarcodeIdx,:]
 
-    # filter low coverage/sparse timepoints
+    # filter out low coverage/sparse timepoints
     filteredCycleTimes,filteredReads = filterTimepoints(cycleTimes,allReads,lowCoverageThresh,sparsityThresh)
 
     # set neutral indices (boolean array)
+
     if neutralBarcodes==None:
         # if no neutrals defined, use double filtering to figure them out
         neutralIndices = len(barcodes)*[True]
@@ -170,7 +173,8 @@ def meanVarAndNeutrals(neutralIndices,replicateReads,zCutoff,cycleTimes,firstPas
         initReads =  np.median(replicateReads[neutralIndices, initIdx])
         finalReads = np.median(replicateReads[neutralIndices,initIdx+1])
 
-        # If median is low, then use the mean instead. If first pass, don't use this timepoint for inference.
+        # If median is low due to sparseness, then use the mean instead.
+        # If first pass, don't use this timepoint for inference.
         medianLowCutoff = 10  # if median below this value, use mean instead
 
         if initReads<medianLowCutoff or finalReads<medianLowCutoff:
@@ -184,6 +188,7 @@ def meanVarAndNeutrals(neutralIndices,replicateReads,zCutoff,cycleTimes,firstPas
         expectedReads = (Rfinal/Rinit)*np.exp(-meanFitness[initIdx])*replicateReads[:,initIdx]
         zScores = replicateReads[:,initIdx+1]-expectedReads
         zScores = zScores*np.power(expectedReads,-0.5)
+
         # compute kappa
         kappas[initIdx] = np.var(zScores[neutralIndices*np.isfinite(zScores)])
         # new neutrals

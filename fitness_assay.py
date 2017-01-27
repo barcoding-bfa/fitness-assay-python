@@ -1,6 +1,7 @@
 """
 
-Fitness inference code for bulk fitness assay. Started 9/16/16 by Atish Agarwala
+Fitness inference code for bulk fitness assay, by Atish Agarwala. Latest version of fitness inference algorithm as
+described in: http://dx.doi.org/10.1016/j.cell.2016.08.002.
 
 """
 
@@ -31,7 +32,7 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
     :param zCutoff: cutoff used to establish neutrals
     :param multNoiseBase: default value of multiplicative noise, used if only 1 replicate exists
     :param lowCoverageThresh: threshold by which low coverage points are tossed out
-    :param sparsityThresh: Toss out timepoints where >sparsityThresh lineages have zero reads. Optional.
+    :param sparsityThresh: Remove timepoints where >sparsityThresh lineages have zero reads. Optional.
 
     :return repFitnessData: dictionary with same keys as allReads. values are dictionaries, with key value pairs:
     timePointsUsed - 1 x q list of timepoints used in inference
@@ -56,7 +57,7 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
     for repName in repNames:
         allReads[repName] = allReads[repName][sortedBarcodeIdx,:]
 
-    # filter low coverage reads
+    # filter low coverage/sparse timepoints
     filteredCycleTimes,filteredReads = filterTimepoints(cycleTimes,allReads,lowCoverageThresh,sparsityThresh)
 
     # set neutral indices (boolean array)

@@ -1,2 +1,9 @@
 # fitness-assay-python
-Code for inferring fitnesses from barcode abundance data
+
+This repository holds code for the _bulk fitness assay_ described in this [2016 Cell Paper](http://dx.doi.org/10.1016/j.cell.2016.08.002). In short it infers fitnesses from barcode abundance data.
+
+## Basics of inference algorithm
+
+For more details, please see the supplement of the above paper. Details available upon request.
+
+## Useage

@@ -34,7 +34,7 @@ and the variability across experiments may be much larger than suggested by the 
 ## Basics of inference algorithm
 
 This code infers the fitnesses of barcoded individuals from the abundance data. For each pair of timepoints, the fitness
-increase s per timepoint is estimated as the log ratio of frequencies at adjacent timepoints, compared
+increase _s_ per timepoint is estimated as the log ratio of frequencies at adjacent timepoints, compared
 to the reference type. The fitnesses from each
 pair of timepoints is assigned a noise value. This noise model assumes Gaussian noise (which was theoretically
 motivated and fit well the original data). The code then takes an appropriate weighted average of all measurements

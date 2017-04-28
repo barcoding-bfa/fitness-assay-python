@@ -141,7 +141,7 @@ inverse variance weighted.
 As per [this paper](http://dx.doi.org/10.1016/j.cell.2016.08.002), this code uses a mixed noise model to analyze the data.
 At lower read numbers (below 10<sup>3</sup>), the variation in read numbers seems to be well approximated by
 an _additive noise model_, where each cell (or read) contributes an independent amount to the errors. These
-give errors in fitness which scale as as _r_<sup>-1/2</sup>, where _r_ is the typical number of reads for that
+give errors in fitness which scale as as _r_ <sup>-1/2</sup>, where _r_ is the typical number of reads for that
 lineage. This noise comes from drift, sampling, and other error processes.
 
 However, high frequency lineages have noise in fitness which does not decrease with

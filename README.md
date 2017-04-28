@@ -72,8 +72,8 @@ parameters. Details available upon request.
 The main method to be called is `inferFitness`. This function does fitness inference for one experiment across
 all replicates at once. It requires the following arguments:
 
-* `barcodes`: N x 1 list of all barcodes. These need to be unique, sortable identifiers in any format (numbers, strings, etc.).
-* `cycleTimes`: 1 x q list of cycle times. For example, if the assay was run for three complete cycles and samples were taken before the experiment and after each cycle, except the first, the list would be: [0,2,3]
+* `barcodes`: _N_ x 1 list of all barcodes. These need to be unique, sortable identifiers in any format (numbers, strings, etc.).
+* `cycleTimes`: 1 x _q_ list of cycle times. For example, if the assay was run for three complete cycles and samples were taken before the experiment and after each cycle, except the first, the list would be: [0,2,3]
 * `allReads`: Python dictionary of length r, where key is replicate name, and value is N x q matrix of reads.
 
 It the following optional arguments:
@@ -89,15 +89,80 @@ It the following optional arguments:
 
 The code returns the following:
 * `repFitnessData`: dictionary with same keys as allReads. values are dictionaries, with key value pairs:
-  * `timePointsUsed`: 1 x q list of timepoints used in inference
-  * `multNoiseParams`: 1 x q-1 list of multiplicative noise parameters
-  * `meanFitnesses`: 1 x q-1 list of mean fitnesses
-  * `allTimeFitness`: N x q-1 list of fitnesses
-  * `allTimeErrors`: N x q-1 list of errors
-  * `aveFitness`: N x 1 list of overall fitness estimates
-  * `aveError`: N x 1 list of overall error estimates
+  * `neutralBarcodes`: _N<sub>neut</sub>_ x 1 list of barcodes which were assumed to be neutral.
+  * `timePointsUsed`: 1 x _q_ list of timepoints used in inference
+  * `multNoiseParams`: 1 x _q_-1 list of multiplicative noise parameters
+  * `kappas`: 1 x _q_-1 list of additive noise parameters
+  * `meanFitnesses`: 1 x _q_-1 list of mean fitnesses
+  * `allTimeFitness`: _N_ x _q_-1 list of fitnesses
+  * `allTimeErrors`: _N_ x _q_-1 list of errors
+  * `aveFitness`: _N_ x 1 list of overall fitness estimates
+  * `aveError`: _N_ x 1 list of overall error estimates
 
-In addition, it saves files to `outputFolder`, labelled by the experiment name, replicate, and the type of data stored.
+In addition, the code prints out a simple consistency check for the noise model at each timepoint for each replicate.
+Briefly, this checks if the mixed noise model holds; if timepoints are not consistent,
+either `multNoiseThresh` is too low, or `multNoiseBase` should be set to zero. Please see the supplement of
+[the original work](http://dx.doi.org/10.1016/j.cell.2016.08.002) for details.
+
+Finally, the function saves files to `outputFolder`, labelled by the experiment name, replicate, and the type of data stored.
+
+## Common questions/errors
+
+### I get a lot of warnings at runtime. Is that normal?
+
+Division by zero warnings are to be expected; the come for lineages which have 0 reads at some timepoints. Depending on
+your version of Python, there may be a few `FutureWarnings` as well. Other warnings may be indicative of flawed behavior.
+
+The code should work for both Python 2 and Python 3; however, it is more regularly tested on Python 3. Sometimes
+warnings/errors can be explained by the differences between the two.
+
+### I have inhomogenous cycles/want fitness in different units. How can I do that?
+
+The `cycleTimes` parameter can take time in whichever units you desire. If you want per generation fitnesses, then
+use the sequence of total generations since first passage. If you have longer or shorter cycles, then
+`cycleTimes` should reflect that fact.
+
+### My fitness/error values are all `nan`. What happened?
+
+If you only have a few `nan` values in `allTimeFitness`, then those are likely just lineages with poor coverage. If
+all values at any timepoint are `nan`, then something has gone wrong with the estimation of the mean fitness; check the
+lineages that are labelled as neutral at input and output to make sure those classes behave correctly.
+
+If the values of `allTimeErrors` are `nan`, there are two possibilities. One is that the estimation of the additive
+noise parameters `kappas` went awry, which is an issue with the neutral types. The other is that estimation of
+the `multNoiseParams` is somehow flawed; check the behavior of lineages with average number of reads larger than
+`multNoiseThresh`.
+
+Note that if the errors are all `nan`, the averaged fitnesses will be as well. This is because the averages are
+inverse variance weighted.
+
+### The code has suggested that some of my timepoints are inconsistent. What does that mean?
+
+As per [this paper](http://dx.doi.org/10.1016/j.cell.2016.08.002), this code uses a mixed noise model to analyze the data.
+At lower read numbers (below 10<sup>3</sup>), the variation in read numbers seems to be well approximated by
+an _additive noise model_, where each cell (or read) contributes an independent amount to the errors. These
+give errors in fitness which scale as as _r_ <sup>-1/2</sup>, where _r_ is the typical number of reads for that
+lineage. This noise comes from drift, sampling, and other error processes.
+
+However, high frequency lineages have noise in fitness which does not decrease with
+increasing read depth. This _multiplicative noise_ has unknown origin; it has yet to be studied systematically, but
+there are some indications that it may come from biases in sequencing.
+
+The algorithm uses the neutral lineages to estimate the additive noise (by averaging _within_ replicates) and
+high frequency lineages to estimate the multiplicative noise (by averaging _between_ replicates). Ideally,
+one would like to use lineages whose additive noise is much less than their multiplicative noise in order to estimate
+the multiplicative noise.
+
+This gives us a simple consistency check; if the reported multiplicative noise is larger than the additive noise of the
+lineages used to estimate it, the noise model makes sense. This gives us the consistency condition
+`multNoiseParam > kappa/multNoiseThresh`, where `kappa` is the additive noise parameter. The code computes this
+inequality, and reports timepoints which fail it.
+
+If you have inconsistent timepoints, they may not be estimating the multiplicative noise well. You can then try
+increasing `multNoiseThresh` to see if this solves the problem. If you wish to ignore multiplicative noise all
+together, then set `multNoiseThresh` higher than the max of your data, and `multNoiseBase` to zero. Note that this
+may underestimate errors for high frequency lineages.
+
 
 ## Dependencies
 

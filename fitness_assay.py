@@ -83,10 +83,11 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
     repFitnessData = inferFitnessAndError(filteredReads,filteredCycleTimes,multNoiseParams,neutralIndices,zCutoff,barcodes)
 
     # output consistency checks on multiplicative noise estimation
-
+    print('Multiplicative noise consistency checks')
     for rep in repFitnessData:
-        print('Multiplicative noise consistency checks')
-        print(rep,' inconsistent times (first):')
+        print('')
+        print(rep,' inconsistent times:')
+        print('')
         inconsistentTimes = ''
         for kappa,multNoiseParam,time in zip(repFitnessData[rep]['kappas'],repFitnessData[rep]['multNoiseParams'],
                                              repFitnessData[rep]['timePointsUsed'][:-1]):
@@ -97,7 +98,7 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
         else:
             inconsistentTimes = inconsistentTimes[:-2]
             print(inconsistentTimes)
-
+        print('')
     # save data
 
     if outputFolder!=None:

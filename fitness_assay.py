@@ -68,7 +68,7 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
 
     if neutralBarcodes==None:
         # if no neutrals defined, use double filtering to figure them out
-        neutralIndices = len(barcodes)*[True]
+        neutralIndices = np.array(len(barcodes)*[True])
         dummyMean,dummyKappa,neutralIndices,zScores = meanVarAndNeutrals(neutralIndices,filteredReads[repNames[0]],zCutoff,filteredCycleTimes[repNames[0]],firstPass=True)
         dummyMean,dummyKappa,neutralIndices,zScores = meanVarAndNeutrals(neutralIndices,filteredReads[repNames[0]],zCutoff,filteredCycleTimes[repNames[0]])
         dummyMean,dummyKappa,neutralIndices,zScores = meanVarAndNeutrals(neutralIndices,filteredReads[repNames[0]],zCutoff,filteredCycleTimes[repNames[0]])
@@ -151,7 +151,7 @@ def returnNeutralIndices(barcodes,neutralBarcodes):
     :return neutralIndices: boolean array of neutral barcodes
     """
 
-    neutralIndices = [False]*len(barcodes)
+    neutralIndices = np.array([False]*len(barcodes))
     neutralBarcodeIdx = 0
     barcodeIdx = 0
 

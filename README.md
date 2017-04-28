@@ -122,18 +122,18 @@ The `cycleTimes` parameter can take time in whichever units you desire. If you w
 use the sequence of total generations since first passage. If you have longer or shorter cycles, then
 `cycleTimes` should reflect that fact.
 
-### My fitness/error values are all `nan`. What happened?
+### My fitness/error values are all `NaN`. What happened?
 
-If you only have a few `nan` values in `allTimeFitness`, then those are likely just lineages with poor coverage. If
-all values at any timepoint are `nan`, then something has gone wrong with the estimation of the mean fitness; check the
+If you only have a few `NaN` values in `allTimeFitness`, then those are likely just lineages with poor coverage. If
+all values at any timepoint are `NaN`, then something has gone wrong with the estimation of the mean fitness; check the
 lineages that are labelled as neutral at input and output to make sure those classes behave correctly.
 
-If the values of `allTimeErrors` are `nan`, there are two possibilities. One is that the estimation of the additive
+If the values of `allTimeErrors` are `NaN`, there are two possibilities. One is that the estimation of the additive
 noise parameters `kappas` went awry, which is an issue with the neutral types. The other is that estimation of
 the `multNoiseParams` is somehow flawed; check the behavior of lineages with average number of reads larger than
 `multNoiseThresh`.
 
-Note that if the errors are all `nan`, the averaged fitnesses will be as well. This is because the averages are
+Note that if the errors are all `NaN`, the averaged fitnesses will be as well. This is because the averages are
 inverse variance weighted.
 
 ### The code has suggested that some of my timepoints are inconsistent. What does that mean?

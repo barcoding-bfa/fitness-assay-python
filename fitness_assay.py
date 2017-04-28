@@ -35,8 +35,10 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
     :param sparsityThresh: Remove timepoints where >sparsityThresh lineages have zero reads. Optional.
 
     :return repFitnessData: dictionary with same keys as allReads. values are dictionaries, with key value pairs:
+    neutralBarcodes - N_{neut} x 1 list of barcodes which were assumed to be neutral.
     timePointsUsed - 1 x q list of timepoints used in inference
     multNoiseParams - 1 x q-1 list of multiplicative noise parameters
+    kappas - 1 x q-1 list of additive noise parameters
     meanFitnesses - 1 x q-1 list of mean fitnesses
     allTimeFitness - N x q-1 list of fitnesses
     allTimeErrors - N x q-1 list of errors
@@ -79,6 +81,22 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
     # infer fitnesses
 
     repFitnessData = inferFitnessAndError(filteredReads,filteredCycleTimes,multNoiseParams,neutralIndices,zCutoff,barcodes)
+
+    # output consistency checks on multiplicative noise estimation
+
+    for rep in repFitnessData:
+        print('Multiplicative noise consistency checks')
+        print(rep,' inconsistent times (first):')
+        inconsistentTimes = ''
+        for kappa,multNoiseParam,time in zip(repFitnessData[rep]['kappas'],repFitnessData[rep]['multNoiseParams'],
+                                             repFitnessData[rep]['timePointsUsed'][:-1]):
+            if kappa/multNoiseThresh>multNoiseParam:
+                inconsistentTimes = inconsistentTimes+str(time)+', '
+        if len(inconsistentTimes)==0:
+            print('No clear inconsistencies')
+        else:
+            inconsistentTimes = inconsistentTimes[:-2]
+            print(inconsistentTimes)
 
     # save data
 
@@ -278,19 +296,23 @@ def inferMultNoise(allReads,allCycleTimes,multNoiseThresh,multNoiseBase):
             finalReads = np.zeros((numLineages,len(repNames)))
             repIdx = 0
             for repName in repNames:
-                initReads[:,repIdx] = allReads[repName][:,timeIndices[repName][initIdx]]
-                finalReads[:,repIdx] = allReads[repName][:,timeIndices[repName][initIdx]+1]
+                initReads[:,repIdx] = allReads[repName][:,int(timeIndices[repName][initIdx])]
+                finalReads[:,repIdx] = allReads[repName][:,int(timeIndices[repName][initIdx])+1]
                 repIdx = repIdx+1
             initR = np.sum(initReads,axis=0)
             finalR = np.sum(finalReads,axis=0)
 
             filteredIdx = np.mean(initReads,axis=1)>multNoiseThresh
-            # filtered frequencies
-            initFreq = initReads[filteredIdx,:]/initR
-            finalFreq = finalReads[filteredIdx,:]/finalR
-            # Variance of log slopes
-            logSlopes = np.log(finalFreq)-np.log(initFreq)
-            calculatedMultNoise[initIdx] = np.sqrt(np.mean(np.var(logSlopes,axis=1,ddof=1)))
+            # if nothing passes filter, use default value
+            if sum(filteredIdx)==0:
+                calculatedMultNoise[initIdx] = multNoiseBase
+            else:
+                # filtered frequencies
+                initFreq = initReads[filteredIdx,:]/initR
+                finalFreq = finalReads[filteredIdx,:]/finalR
+                # Variance of log slopes
+                logSlopes = np.log(finalFreq)-np.log(initFreq)
+                calculatedMultNoise[initIdx] = np.sqrt(np.mean(np.var(logSlopes,axis=1,ddof=1)))
 
         for repName in repNames:
             multNoiseParams[repName] = calculatedMultNoise[mappedTimePoints[repName].astype('int')]
@@ -308,12 +330,13 @@ def inferFitnessAndError(allReads,allCycleTimes,multNoiseParams,neutralIndices,z
     :param allCycleTimes: dictionary length r containing cycle times of each replicate
     :param multNoiseParams: dictionary length r containing 1 x q-1 vector of multiplicative noise parameter
     :param neutralIndices: putatively neutral indices
+    :param barcodes: - N x 1 list of barcodes
     :return repFitnessData: dictionary with same keys as allReads. values are dictionaries, with key value pairs:
-    barcodes - N x 1 list of barcodes
+    neutralBarcodes - N_{neut} x 1 list of barcodes which were assumed to be neutral.
     timePointsUsed - 1 x q list of timepoints used in inference
     multNoiseParams - 1 x q-1 list of multiplicative noise parameters
-    kappas - 1 x q-1 list of additive noise constants
-    meanFitness - 1 x q-1 list of mean fitnesses
+    kappas - 1 x q-1 list of additive noise parameters
+    meanFitnesses - 1 x q-1 list of mean fitnesses
     allTimeFitness - N x q-1 list of fitnesses
     allTimeErrors - N x q-1 list of errors
     aveFitness - N x 1 list of overall fitness estimates
@@ -330,7 +353,8 @@ def inferFitnessAndError(allReads,allCycleTimes,multNoiseParams,neutralIndices,z
 
         meanFitness,kappas,newNeutralIndices,zScores = meanVarAndNeutrals(neutralIndices,allReads[repName],zCutoff
                                                                   ,allCycleTimes[repName])
-		
+        # Store neutrals
+        tempDataDict['neutralBarcodes'] = barcodes[newNeutralIndices]
         # second pass, with cleaned up neutrals
         meanFitness,kappas,newNeutralIndices,zScores = meanVarAndNeutrals(newNeutralIndices,allReads[repName],zCutoff
                                                                   ,allCycleTimes[repName])

@@ -266,57 +266,58 @@ def inferMultNoise(allReads,allCycleTimes,multNoiseThresh,multNoiseBase):
         totalTimes = allCycleTimes[repNames[0]]
         for repName in repNames:
             totalTimes = np.intersect1d(totalTimes,allCycleTimes[repName])
-
-        # find time indices and mapping from calculated parameters to cycle noise
-        timeIndices = {}
-        mappedTimePoints = {}
-        for repName in repNames:
-            timeIndices[repName] = np.zeros(len(totalTimes))
-            mappedTimePoints[repName] = np.zeros(len(allCycleTimes[repName]))
-            totalTimeIdx = 0
-            specificTimeIdx = 0
-            while totalTimeIdx<len(totalTimes):
-                specificTimeFound = False
-                while not specificTimeFound:
-                    specificTimeFound = allCycleTimes[repName][specificTimeIdx]==totalTimes[totalTimeIdx]
-                    if specificTimeFound:
-                        timeIndices[repName][totalTimeIdx] = specificTimeIdx
-                    if allCycleTimes[repName][specificTimeIdx]<totalTimes[-1]:
-                        mappedTimePoints[repName][specificTimeIdx] = totalTimeIdx
-                    else:
-                        mappedTimePoints[repName][specificTimeIdx] = totalTimeIdx-1
-                    specificTimeIdx = specificTimeIdx+1
-                totalTimeIdx = totalTimeIdx+1
-            mappedTimePoints[repName][specificTimeIdx:] = len(totalTimes)-1
-            mappedTimePoints[repName] = mappedTimePoints[repName][0:-1]
-
-        # compute noise parameters
-        calculatedMultNoise = np.zeros(len(totalTimes)-1)
-        for initIdx,initTime in enumerate(totalTimes[0:-1]):
-            initReads = np.zeros((numLineages,len(repNames)))
-            finalReads = np.zeros((numLineages,len(repNames)))
-            repIdx = 0
+        if len(totalTimes)>1:
+            # find time indices and mapping from calculated parameters to cycle noise
+            timeIndices = {}
+            mappedTimePoints = {}
             for repName in repNames:
-                initReads[:,repIdx] = allReads[repName][:,int(timeIndices[repName][initIdx])]
-                finalReads[:,repIdx] = allReads[repName][:,int(timeIndices[repName][initIdx])+1]
-                repIdx = repIdx+1
-            initR = np.sum(initReads,axis=0)
-            finalR = np.sum(finalReads,axis=0)
+                timeIndices[repName] = np.zeros(len(totalTimes))
+                mappedTimePoints[repName] = np.zeros(len(allCycleTimes[repName]))
+                totalTimeIdx = 0
+                specificTimeIdx = 0
+                while totalTimeIdx<len(totalTimes):
+                    specificTimeFound = False
+                    while not specificTimeFound:
+                        specificTimeFound = allCycleTimes[repName][specificTimeIdx]==totalTimes[totalTimeIdx]
+                        if specificTimeFound:
+                            timeIndices[repName][totalTimeIdx] = specificTimeIdx
+                        if totalTimeIdx<=len(totalTimes)-2:
+                            mappedTimePoints[repName][specificTimeIdx] = totalTimeIdx
+                        else:
+                            mappedTimePoints[repName][specificTimeIdx] = len(totalTimes)-2
+                        specificTimeIdx = specificTimeIdx+1
+                    totalTimeIdx = totalTimeIdx+1
+                mappedTimePoints[repName][specificTimeIdx:] = mappedTimePoints[repName][specificTimeIdx-1]
+                mappedTimePoints[repName] = mappedTimePoints[repName][0:-1]
+            # compute noise parameters
+            calculatedMultNoise = np.zeros(len(totalTimes)-1)
+            for initIdx,initTime in enumerate(totalTimes[0:-1]):
+                initReads = np.zeros((numLineages,len(repNames)))
+                finalReads = np.zeros((numLineages,len(repNames)))
+                repIdx = 0
+                for repName in repNames:
+                    initReads[:,repIdx] = allReads[repName][:,int(timeIndices[repName][initIdx])]
+                    finalReads[:,repIdx] = allReads[repName][:,int(timeIndices[repName][initIdx])+1]
+                    repIdx = repIdx+1
+                initR = np.sum(initReads,axis=0)
+                finalR = np.sum(finalReads,axis=0)
 
-            filteredIdx = np.mean(initReads,axis=1)>multNoiseThresh
-            # if nothing passes filter, use default value
-            if sum(filteredIdx)==0:
-                calculatedMultNoise[initIdx] = multNoiseBase
-            else:
-                # filtered frequencies
-                initFreq = initReads[filteredIdx,:]/initR
-                finalFreq = finalReads[filteredIdx,:]/finalR
-                # Variance of log slopes
-                logSlopes = np.log(finalFreq)-np.log(initFreq)
-                calculatedMultNoise[initIdx] = np.sqrt(np.mean(np.var(logSlopes,axis=1,ddof=1)))
-
-        for repName in repNames:
-            multNoiseParams[repName] = calculatedMultNoise[mappedTimePoints[repName].astype('int')]
+                filteredIdx = np.mean(initReads,axis=1)>multNoiseThresh
+                # if nothing passes filter, use default value
+                if sum(filteredIdx)==0:
+                    calculatedMultNoise[initIdx] = multNoiseBase
+                else:
+                    # filtered frequencies
+                    initFreq = initReads[filteredIdx,:]/initR
+                    finalFreq = finalReads[filteredIdx,:]/finalR
+                    # Variance of log slopes
+                    logSlopes = np.log(finalFreq)-np.log(initFreq)
+                    calculatedMultNoise[initIdx] = np.sqrt(np.mean(np.var(logSlopes,axis=1,ddof=1)))
+            for repName in repNames:
+                multNoiseParams[repName] = calculatedMultNoise[mappedTimePoints[repName].astype('int')]
+        else:
+            for repName in repNames:
+                multNoiseParams[repName] = multNoiseBase*np.ones(len(allCycleTimes[repName])-1)
     else:
 
         multNoiseParams[repNames[0]] = multNoiseBase*np.ones(len(allCycleTimes[repNames[0]])-1)

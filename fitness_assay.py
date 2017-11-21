@@ -56,7 +56,7 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
     # sort barcodes, rearrange data appropriately
     sortedBarcodeIdx = np.argsort(barcodes)
     barcodes = np.sort(barcodes)
-    if neutralBarcodes!=None:
+    if neutralBarcodes is not None:
         neutralBarcodes = np.sort(neutralBarcodes)
     for repName in repNames:
         allReads[repName] = allReads[repName][sortedBarcodeIdx,:]
@@ -66,7 +66,7 @@ def inferFitness(barcodes,cycleTimes,allReads,outputFolder=None,experimentName=N
 
     # set neutral indices (boolean array)
 
-    if neutralBarcodes==None:
+    if neutralBarcodes is None:
         # if no neutrals defined, use double filtering to figure them out
         neutralIndices = np.array(len(barcodes)*[True])
         dummyMean,dummyKappa,neutralIndices,zScores = meanVarAndNeutrals(neutralIndices,filteredReads[repNames[0]],zCutoff,filteredCycleTimes[repNames[0]],firstPass=True)

@@ -218,8 +218,8 @@ def meanVarAndNeutrals(neutralIndices,replicateReads,zCutoff,cycleTimes,firstPas
             # quartile to use for inference
             pWidth = 0.25
             sortedZ = np.sort(zScores)
-            minIdx = round((0.5-pWidth)*len(sortedZ))
-            maxIdx = round((0.5+pWidth)*len(sortedZ))
+            minIdx = int(round((0.5-pWidth))*len(sortedZ))
+            maxIdx = int(round((0.5+pWidth))*len(sortedZ))
             deltaZ = sortedZ[maxIdx]-sortedZ[minIdx]
             estWidth = deltaZ/(norm.ppf(0.5+pWidth)-norm.ppf(0.5-pWidth))
             for idx,isNeutral in enumerate(neutralIndices):

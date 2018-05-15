@@ -129,7 +129,10 @@ all values at any timepoint are `NaN`, then something has gone wrong with the es
 lineages that are labelled as neutral at input and output to make sure those classes behave correctly.
 
 If the values of `allTimeErrors` are `NaN`, there are two possibilities. One is that the estimation of the additive
-noise parameters `kappas` went awry, which is an issue with the neutral types. The other is that estimation of
+noise parameters `kappas` went awry, which is an issue with the neutral types. There likely were many types marked
+as neutral with 0 reads somewhere in their trajectory; you may want to clean up those sparsely read lineages
+before trying to use the code.
+The other possible issue is that estimation of
 the `multNoiseParams` is somehow flawed; check the behavior of lineages with average number of reads larger than
 `multNoiseThresh`.
 
